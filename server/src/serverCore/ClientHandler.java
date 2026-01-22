@@ -18,11 +18,14 @@ public class ClientHandler extends Thread {
     private final Socket socket;
     private final UserService userService;
     private final CardStore store;
+    private final java.util.concurrent.atomic.AtomicInteger activeClients;
 
-    public ClientHandler(Socket socket, UserService userService, CardStore store) {
+    public ClientHandler(Socket socket, UserService userService, CardStore store,
+                         java.util.concurrent.atomic.AtomicInteger activeClients) {
         this.socket = socket;
         this.userService = userService;
         this.store = store;
+        this.activeClients = activeClients;
     }
     @Override
     public void run() {
@@ -77,6 +80,8 @@ public class ClientHandler extends Thread {
             }
         } catch (Exception e){
             LOG.log(Level.SEVERE, "Client handler error", e);
+        } finally {
+            if (activeClients != null) activeClients.decrementAndGet();
         }
     }
     private void handleEncrypt(String[] parts,User user,PrintWriter out){

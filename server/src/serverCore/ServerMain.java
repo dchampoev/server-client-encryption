@@ -2,25 +2,31 @@ package serverCore;
 
 import auth.UserService;
 import auth.UserServiceXml;
-import serverCore.ClientHandler;
 import storage.CardStore;
 
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ServerMain {
+
     static void main() throws Exception {
         int port = 80;
 
-        UserService userService= new UserServiceXml("users.xml");
+        UserService userService = new UserServiceXml("users.xml");
         CardStore cardStore = new CardStore();
 
-        try(ServerSocket serverSocket = new ServerSocket(port)){
-            System.out.println("Server listening on port "+port);
+        AtomicInteger activeClients = new AtomicInteger(0);
 
-            while(true){
+        try (ServerSocket serverSocket = new ServerSocket(port)) {
+            System.out.println("Server listening on port " + port);
+
+            while (true) {
                 Socket client = serverSocket.accept();
-                new ClientHandler(client,userService,cardStore).start();
+
+                activeClients.incrementAndGet();
+
+                new ClientHandler(client, userService, cardStore, activeClients).start();
             }
         }
     }
