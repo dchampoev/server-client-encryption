@@ -4,6 +4,9 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
+import javafx.util.Duration;
 import serverUI.api.AdminUserService;
 import serverUI.api.Right;
 import serverUI.api.UserInfo;
@@ -42,6 +45,8 @@ public class AdminPanelController {
     private serverUI.api.ServerControlService serverControl;
     private serverUI.api.LogService logService;
 
+    private Timeline refreshTimer;
+
     public void setService(AdminUserService service) {
         this.service = service;
         reloadTableFromService(true);
@@ -68,6 +73,7 @@ public class AdminPanelController {
             tfUsername.setText(newV.getUsername());
             applyRightsStringToCheckboxes(newV.getRights());
         });
+        startRefreshTimer();
     }
 
     // -------- top buttons --------
@@ -227,9 +233,11 @@ public class AdminPanelController {
 
     private void refreshServerStatus() {
         if (serverControl == null) return;
+
         lblPort.setText(String.valueOf(serverControl.getPort()));
         lblClients.setText(String.valueOf(serverControl.getActiveClients()));
-        lblServerStatus.setText(serverControl.isRunning() ? "RUNNING" : "STOPPED");
+
+        updateServerStatusVisual();
     }
 
     private void refreshLogs() {
@@ -238,7 +246,32 @@ public class AdminPanelController {
         taLogs.setText(logService.readAll());
 
         if (cbAutoScroll != null && cbAutoScroll.isSelected()) {
-            taLogs.positionCaret(taLogs.getText().length());
+            taLogs.setScrollTop(Double.MAX_VALUE);
         }
+    }
+
+    private void startRefreshTimer() {
+        if (refreshTimer != null) return;
+
+        refreshTimer = new Timeline(
+                new KeyFrame(Duration.seconds(1), e -> {
+                    refreshServerStatus();
+                    refreshLogs();
+                })
+        );
+        refreshTimer.setCycleCount(Timeline.INDEFINITE);
+        refreshTimer.play();
+    }
+    private void updateServerStatusVisual() {
+        if (serverControl == null) return;
+
+        boolean running = serverControl.isRunning();
+
+        lblServerStatus.setText(running ? "RUNNING" : "STOPPED");
+        lblServerStatus.setStyle(
+                running
+                        ? "-fx-text-fill: #2ecc71; -fx-font-weight: bold;"
+                        : "-fx-text-fill: #e74c3c; -fx-font-weight: bold;"
+        );
     }
 }
