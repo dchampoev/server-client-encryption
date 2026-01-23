@@ -14,12 +14,14 @@ public class AdminApp extends Application {
     private static AdminUserService adminService;
     private static serverUI.api.ServerControlService serverControl;
     private static serverUI.api.LogService logService;
+    private static serverUI.api.ExportService exportService;
 
     public static void setAdminService(AdminUserService service) {
         adminService = service;
     }
     public static void setServerControl(serverUI.api.ServerControlService s) { serverControl = s; }
     public static void setLogService(serverUI.api.LogService s) { logService = s; }
+    public static void setExportService(serverUI.api.ExportService s) { exportService = s; }
 
     @Override
     public void start(Stage stage) throws Exception {
@@ -32,6 +34,7 @@ public class AdminApp extends Application {
         controller.setService(adminService);
         controller.setServerControl(serverControl);
         controller.setLogService(logService);
+        controller.setExportService(exportService);
 
         Scene scene = new Scene(root);
 

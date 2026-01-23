@@ -7,6 +7,7 @@ import javafx.scene.control.*;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.util.Duration;
+import javafx.stage.FileChooser;
 import serverUI.api.AdminUserService;
 import serverUI.api.Right;
 import serverUI.api.UserInfo;
@@ -14,6 +15,7 @@ import serverUI.api.UserInfo;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.io.File;
 
 public class AdminPanelController {
 
@@ -44,6 +46,7 @@ public class AdminPanelController {
     private AdminUserService service;
     private serverUI.api.ServerControlService serverControl;
     private serverUI.api.LogService logService;
+    private serverUI.api.ExportService exportService;
 
     private Timeline refreshTimer;
 
@@ -60,6 +63,9 @@ public class AdminPanelController {
     public void setLogService(serverUI.api.LogService s) {
         this.logService = s;
         refreshLogs();
+    }
+    public void setExportService(serverUI.api.ExportService s) {
+        this.exportService = s;
     }
 
     @FXML
@@ -167,12 +173,36 @@ public class AdminPanelController {
 
     @FXML
     private void onExportByCryptogram() {
-        if (lblExportResult != null) lblExportResult.setText("Not implemented yet.");
+        if (exportService == null) {
+            lblExportResult.setText("Export service not set.");
+            return;
+        }
+        File file = chooseSaveFile("export_by_cryptogram.txt");
+        if (file == null) return;
+
+        try {
+            exportService.exportByCryptogram(file.getAbsolutePath());
+            lblExportResult.setText("Exported: " + file.getName());
+        } catch (Exception e) {
+            lblExportResult.setText("Export failed: " + e.getMessage());
+        }
     }
 
     @FXML
     private void onExportByCard() {
-        if (lblExportResult != null) lblExportResult.setText("Not implemented yet.");
+        if (exportService == null) {
+            lblExportResult.setText("Export service not set.");
+            return;
+        }
+        File file = chooseSaveFile("export_by_card.txt");
+        if (file == null) return;
+
+        try {
+            exportService.exportByCard(file.getAbsolutePath());
+            lblExportResult.setText("Exported: " + file.getName());
+        } catch (Exception e) {
+            lblExportResult.setText("Export failed: " + e.getMessage());
+        }
     }
 
     // -------- logs buttons --------
@@ -273,5 +303,12 @@ public class AdminPanelController {
                         ? "-fx-text-fill: #2ecc71; -fx-font-weight: bold;"
                         : "-fx-text-fill: #e74c3c; -fx-font-weight: bold;"
         );
+    }
+    private File chooseSaveFile(String defaultName) {
+        FileChooser fc = new FileChooser();
+        fc.setTitle("Save export file");
+        fc.setInitialFileName(defaultName);
+        fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("Text file", "*.txt"));
+        return fc.showSaveDialog(tblUsers.getScene().getWindow());
     }
 }
