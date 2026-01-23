@@ -3,8 +3,11 @@ package serverCore;
 import auth.UserServiceXml;
 import storage.CardStore;
 
+import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -16,6 +19,8 @@ public class ServerController {
 
     private final AtomicBoolean running = new AtomicBoolean(false);
     private final AtomicInteger activeClients = new AtomicInteger(0);
+
+    private final Set<Socket> clients = ConcurrentHashMap.newKeySet();
 
     private Thread thread;
     private volatile ServerSocket serverSocket;
@@ -42,10 +47,14 @@ public class ServerController {
     public synchronized void stop() {
         if (!running.get()) return;
 
+        // 1) stop accept loop
         running.set(false);
         try {
-            if (serverSocket != null) serverSocket.close();
+            if (serverSocket != null) serverSocket.close(); // breaks accept()
         } catch (Exception ignored) {}
+
+        // 2) kick all clients
+        kickAllClients();
     }
 
     private void runLoop() {
@@ -61,8 +70,11 @@ public class ServerController {
                     break;
                 }
 
+                clients.add(s);
                 activeClients.incrementAndGet();
-                ClientHandler handler = new ClientHandler(s, userService, store, activeClients);
+
+                ClientHandler handler =
+                        new ClientHandler(s, userService, store, activeClients, clients);
                 handler.start();
             }
         } catch (Exception e) {
@@ -70,6 +82,25 @@ public class ServerController {
         } finally {
             serverSocket = null;
             running.set(false);
+
+            // safety: if server exits, also kick leftovers
+            kickAllClients();
         }
+    }
+
+    private void kickAllClients() {
+        for (Socket s : clients) {
+            kickClient(s);
+        }
+        clients.clear();
+    }
+
+    private void kickClient(Socket s) {
+        if (s == null) return;
+        try {
+            new PrintWriter(s.getOutputStream(), true).println("ERR SERVER STOPPED");
+        } catch (Exception ignored) {
+        }
+        try { s.close(); } catch (Exception ignored) {}
     }
 }

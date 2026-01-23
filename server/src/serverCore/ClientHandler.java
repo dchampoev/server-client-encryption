@@ -10,6 +10,7 @@ import log.ServerLogger;
 
 import java.io.*;
 import java.net.Socket;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -19,13 +20,15 @@ public class ClientHandler extends Thread {
     private final UserService userService;
     private final CardStore store;
     private final java.util.concurrent.atomic.AtomicInteger activeClients;
+    private final Set<Socket> clients;
 
     public ClientHandler(Socket socket, UserService userService, CardStore store,
-                         java.util.concurrent.atomic.AtomicInteger activeClients) {
+                         java.util.concurrent.atomic.AtomicInteger activeClients, Set<Socket> clients) {
         this.socket = socket;
         this.userService = userService;
         this.store = store;
         this.activeClients = activeClients;
+        this.clients = clients;
     }
     @Override
     public void run() {
@@ -81,6 +84,7 @@ public class ClientHandler extends Thread {
         } catch (Exception e){
             LOG.log(Level.SEVERE, "Client handler error", e);
         } finally {
+            if(clients!=null) clients.remove(socket);
             if (activeClients != null) activeClients.decrementAndGet();
         }
     }

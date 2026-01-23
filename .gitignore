@@ -3,8 +3,10 @@ out/
 !**/src/main/**/out/
 !**/src/test/**/out/
 .kotlin
+.idea/
+*.iml
 
-# Logs
+### Logs ###
 *.log
 
 ### Eclipse ###
@@ -35,3 +37,12 @@ bin/
 ### META-INF ###
 META-INF/
 **/META-INF/
+
+### Build outpu ###
+out/
+server/src/lib/
+
+### Runtime data ###
+users.xml
+export_by_card.txt
+export_by_cryptogram.txt

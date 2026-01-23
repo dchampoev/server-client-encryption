@@ -24,10 +24,12 @@ public class ClientMain {
             String password = scanner.nextLine();
 
             out.println("LOGIN "+user+" "+password);
-            String resp = in.readLine();
+            String resp = readResponseOrExit(in);
+            if (resp == null) return;
+
             System.out.println(resp);
 
-            if(!resp.startsWith("OK")){
+            if (!resp.startsWith("OK")) {
                 return;
             }
 
@@ -38,7 +40,9 @@ public class ClientMain {
                 if(cmd.isEmpty()) continue;
 
                 out.println(cmd);
-                String serverResp = in.readLine();
+                String serverResp = readResponseOrExit(in);
+                if (serverResp == null) break;
+
                 System.out.println(serverResp);
 
                 if(cmd.equalsIgnoreCase("QUIT")){
@@ -48,5 +52,20 @@ public class ClientMain {
         } catch(IOException e) {
             System.err.println("Client error: "+e.getMessage());
         }
+    }
+    private static String readResponseOrExit(BufferedReader in) throws IOException {
+        String resp = in.readLine();
+
+        if (resp == null) {
+            System.out.println("Server disconnected.");
+            return null;
+        }
+
+        if (resp.startsWith("ERR SERVER STOPPED")) {
+            System.out.println("Server stopped.");
+            return null;
+        }
+
+        return resp;
     }
 }
